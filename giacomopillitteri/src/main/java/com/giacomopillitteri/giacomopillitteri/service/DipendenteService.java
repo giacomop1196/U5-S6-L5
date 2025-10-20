@@ -8,6 +8,10 @@ import com.giacomopillitteri.giacomopillitteri.exception.ResourceNotFoundExcepti
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
@@ -15,15 +19,25 @@ import java.util.UUID;
 import java.util.Map;
 
 @Service
-public class DipendenteService {
+public class DipendenteService implements UserDetailsService {
 
-    @Autowired
-    private DipendenteRepository dipendenteRepo;
-    @Autowired
-    private Cloudinary cloudinary;
+    @Autowired private DipendenteRepository dipendenteRepo;
+    @Autowired private Cloudinary cloudinary;
+    @Autowired private PasswordEncoder passwordEncoder;
+
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        return dipendenteRepo.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Dipendente non trovato con email: " + email));
+    }
+
+    public UserDetails loadUserById(UUID id) {
+        return findById(id);
+    }
 
     // CREATE (POST)
     public Dipendente save(Dipendente dipendente) {
+        dipendente.setPassword(passwordEncoder.encode(dipendente.getPassword()));
         return dipendenteRepo.save(dipendente);
     }
 
